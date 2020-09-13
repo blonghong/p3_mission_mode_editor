@@ -1,0 +1,14 @@
+{
+  "name": "p3_mission_mode_editor",
+  "version": "1.0.0",
+  "description": "Pikmin 3 Mission Mode Editor desktop app",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "Jimble",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^10.1.1"
+  }
+}

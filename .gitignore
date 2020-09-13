@@ -1,0 +1,4 @@
+*.nc
+*.DS_store
+node_modules/*
+__pycache__/*
