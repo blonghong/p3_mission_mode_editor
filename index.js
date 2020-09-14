@@ -56,18 +56,24 @@ function createWindow() {
     });
 
     if (response) {
-        const requiredFiles = ['\\CMCmn\\system\\mis_order.szs', '\\CMCmn\\system\\mission_set'];
+        const requiredFiles = ['/CMCmn/system/mis_order.szs', '/CMCmn/system/mission_set'];
+
         const errors = [];
         let addContent = false;
         for (let i = 0; i < requiredFiles.length; i++) {
+            console.log(`checking: '${response + requiredFiles[i]}'`);
             if (!fs.existsSync(response + requiredFiles[i])) {
+                console.log(`^ failed, checking: '${response + "/content" + requiredFiles[i]}'`);
                 addContent = true;
-                if (!fs.existsSync(response + "\\content" + requiredFiles[i])) errors.push(requiredFiles[i]);
+                if (!fs.existsSync(response + "/content" + requiredFiles[i])) {
+                    console.log(`^ failed!!`)
+                    errors.push(requiredFiles[i]);
+                }
             }
         }
         if (errors.length > 0) return errorLoadingContent(errors);
         else {
-            contentDir = response + (addContent ? "\\content\\" : "\\");
+            contentDir = response + (addContent ? "/content/" : "/");
             loadPiknum();
             //loadMessage();
         }
@@ -142,6 +148,25 @@ const mainMenuTemplate = [
                 }
             }
         ]
+    },
+    {
+        label: 'Edit',
+        submenu: [
+            {
+                label: 'test'
+            }
+        ]
+    },
+    {
+        role: 'help',
+        submenu: [
+            {
+                label: 'Discord Server',
+                click(){
+                    window.open('discord.com');
+                }
+            }
+        ]
     }
 ];
 
@@ -149,9 +174,10 @@ const mainMenuTemplate = [
 if (process.platform == 'darwin') {
     // Mac menu
     mainMenuTemplate.unshift({
+        label: '',
         submenu: [
             { role: 'about' },
-            { role: 'seperator' },
+            { type: 'separator' },
             {
                 label: 'Preferences...',
                 accelerator: 'Command+,',
@@ -159,27 +185,27 @@ if (process.platform == 'darwin') {
                     showPreferences();
                 }
             },
-            { role: 'seperator' },
+            { type: 'separator' },
             { role: 'services' },
-            { role: 'seperator' },
+            { type: 'separator' },
             { role: 'hide' },
             { role: 'hideOthers' },
             { role: 'unhide' },
-            { role: 'seperator' },
+            { type: 'separator' },
             { role: 'quit' }
         ]
     });
 } else {
     // Windows/Linux menu
     mainMenuTemplate[0].submenu.push(
-        { role: 'seperator' },
+        { type: 'separator' },
         { role: 'close' }
     );
 }
 
 // Add dev tools if not in production
 if (process.env.NODE_ENV !== 'production') {
-    mainMenuTemplate.push({
+    mainMenuTemplate.splice(process.platform == 'darwin' ? -1 : -2, 0, {
         label: 'Developer Tools',
         submenu: [
             {
