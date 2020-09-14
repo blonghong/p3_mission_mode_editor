@@ -38,6 +38,10 @@ app.on('ready', function(){
     Menu.setApplicationMenu(mainMenu);
 });
 
+function showPreferences() {
+    console.log("show preferences");
+}
+
 
 let contentDir;
 
@@ -125,31 +129,53 @@ function loadMsbt(msbt) {
     }) 
 }
 
-// Create menu template
+// Create all-platforms menu template
 const mainMenuTemplate = [
     {
         label: 'File',
         submenu: [
             {
                 label: 'Load Pikmin 3',
-                accelerator: 'CmdOrCtrl+Q',
+                accelerator: 'CmdOrCtrl+O',
                 click(){
                     createWindow();
-                }
-            },
-            {
-                label: 'Quit',
-                accelerator: 'CmdOrCtrl+Q',
-                click(){
-                    app.quit();
                 }
             }
         ]
     }
 ];
 
-// If mac, add empty object
-if (process.platform == 'darwin') mainMenuTemplate.unshift({});
+// Platform-specific menus
+if (process.platform == 'darwin') {
+    // Mac menu
+    mainMenuTemplate.unshift({
+        submenu: [
+            { role: 'about' },
+            { role: 'seperator' },
+            {
+                label: 'Preferences...',
+                accelerator: 'Command+,',
+                click(){
+                    showPreferences();
+                }
+            },
+            { role: 'seperator' },
+            { role: 'services' },
+            { role: 'seperator' },
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { role: 'seperator' },
+            { role: 'quit' }
+        ]
+    });
+} else {
+    // Windows/Linux menu
+    mainMenuTemplate[0].submenu.push(
+        { role: 'seperator' },
+        { role: 'close' }
+    );
+}
 
 // Add dev tools if not in production
 if (process.env.NODE_ENV !== 'production') {
@@ -158,7 +184,7 @@ if (process.env.NODE_ENV !== 'production') {
         submenu: [
             {
                 label: 'Toggle DevTools',
-                accelerator: getAccelerator("I"),
+                accelerator: 'CmdOrCtrl+I',
                 click(item, focusedWindow){
                     focusedWindow.toggleDevTools();
                 }
