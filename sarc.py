@@ -350,5 +350,5 @@ if __name__ == "__main__":
             with open(os.path.join(out, path), "wb") as f:
                 f.write(file.getvalue())
         
-        print("unpacked successfully")
+        print("exit-code=0")
         sys.stdout.flush()

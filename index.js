@@ -1,22 +1,32 @@
+const setupEvents = require('./installers/setupEvents');
+if (setupEvents.handleSquirrelEvent()) {
+    // squirrel event handled and app will exit in 1000ms, so don't do anything else
+    return;
+}
+
 const electron = require('electron');
+const { app, BrowserWindow, Menu, dialog } = electron;
 const url = require('url');
 const path = require('path');
 const fs = require('fs');
-
 const spawn = require('child_process').spawn;
-
-const { app, BrowserWindow, Menu, dialog } = electron;
+const exec = require('child_process').exec
 
 const msgRegions = ['EUDut', 'EUEng', 'EUFre', 'EUGer', 'EUIta', 'EUPor', 'EURus', 'EUSpa', 'JPJpn', 'USEng', 'USFre',
     'USPor', 'USSpa'];
 
 let mainWindow;
 
+function openUrl(url) {
+    const start = process.platform == 'darwin' ? 'open' : process.platform == 'win32' ? 'start' : 'xdg-open';
+    exec(`${start} ${url}`);
+}
+
 // Listen for app to be ready
 app.on('ready', function(){
     // Create new window
     mainWindow = new BrowserWindow({
-        title: 'Pikmin 3 Mission Mode Editor',
+        frame: true,
         webPreferences: {
             nodeIntegration: true
         }
@@ -46,7 +56,7 @@ function showPreferences() {
 let contentDir;
 
 // Handle load directory
-function createWindow() {
+function loadRoot() {
     const response = dialog.showOpenDialogSync({
         title: 'Select your Pikmin 3 root directory',
         buttonLabel: 'Select Folder',
@@ -57,16 +67,13 @@ function createWindow() {
 
     if (response) {
         const requiredFiles = ['/CMCmn/system/mis_order.szs', '/CMCmn/system/mission_set'];
-
         const errors = [];
         let addContent = false;
         for (let i = 0; i < requiredFiles.length; i++) {
             console.log(`checking: '${response + requiredFiles[i]}'`);
             if (!fs.existsSync(response + requiredFiles[i])) {
-                console.log(`^ failed, checking: '${response + "/content" + requiredFiles[i]}'`);
                 addContent = true;
                 if (!fs.existsSync(response + "/content" + requiredFiles[i])) {
-                    console.log(`^ failed!!`)
                     errors.push(requiredFiles[i]);
                 }
             }
@@ -74,8 +81,7 @@ function createWindow() {
         if (errors.length > 0) return errorLoadingContent(errors);
         else {
             contentDir = response + (addContent ? "/content/" : "/");
-            loadPiknum();
-            //loadMessage();
+            loadMissions();
         }
     }
 }
@@ -86,53 +92,16 @@ function errorLoadingContent(errors) {
         title: 'Missing Files',
         detail: 'The following files/folders were missing from the selected folder:\n\n' + errors.join('\n'),
         buttons: ["Cancel", "Retry"]
-    }) == 1) return createWindow();
+    }) == 1) return loadRoot();
 }
 
-function loadPiknum() {
+function loadMissions() {
     const unpack = spawn('python', [path.join(__dirname, 'sarc.py'), contentDir + "CMCmn\\system\\mis_order.szs"]);
     unpack.stdout.on('data', (data) => {
-        if (data.toString().includes("unpacked successfully")) {
-            
+        if (data.toString().includes("exit-code=0")) {
+            console.log("finished extracting mis_order.szs!");
         }
     })
-}
-
-function loadMessage() {
-    const messageUnpack = spawn('python', [path.join(__dirname, 'sarc.py'), contentDir + "EUEng\\system\\message.szs"]);
-    const missionFn = `${contentDir}EUEng\\system\\message.szs_ext\\MissionName`;
-    messageUnpack.stdout.on('data', (data) => {
-        if (data.toString().includes("exited sarc.py with success")) {
-            if (fs.existsSync(contentDir + "EUEng\\system\\message.szs_ext\\MissionName.msbt")) {
-
-
-
-
-
-
-                const messageConvert = spawn('python', [path.join(__dirname, 'sarc.py'), '-x', '-y', '-j',
-                    `"${missionFn}.json"`, `"${missionFn}.msbt"`]);
-                
-                messageConvert.stdout.on('data', (data) => {
-                    console.log(data.toString());
-                    if (data.toString().toLowerCase().includes("all good!")) {
-                        console.log("you won the vbux!!!!");
-                    } else return errorLoadingContent(['CONVERTING: EUEng\\system\\message.szs_ext\\MissionName.msbt']);
-                })
-            } else return errorLoadingContent(['EUEng\\system\\message.szs_ext\\MissionName.msbt']);
-        }
-    })
-}
-
-
-
-function loadMsbt(msbt) {
-    const messageConvert = spawn('python', [path.join(__dirname, 'sarc.py'), '-x', '-y', '-j',
-        `"${contentDir}EUEng\\system\\message.szs_ext\\MissionName.json"`,
-        `"${contentDir}EUEng\\system\\message.szs_ext\\MissionName.msbt"`]);
-    messageConvert.on('data', (data) => {
-        if (data.toString().toLowerCase().includes("all good!")) return true;
-    }) 
 }
 
 // Create all-platforms menu template
@@ -144,7 +113,7 @@ const mainMenuTemplate = [
                 label: 'Load Pikmin 3',
                 accelerator: 'CmdOrCtrl+O',
                 click(){
-                    createWindow();
+                    loadRoot();
                 }
             }
         ]
@@ -161,9 +130,19 @@ const mainMenuTemplate = [
         role: 'help',
         submenu: [
             {
-                label: 'Discord Server',
+                label: "Discord Servers",
+                enabled: false
+            },
+            {
+                label: "Jimble's Café",
                 click(){
-                    window.open('discord.com');
+                    openUrl('http://discord.gg/s475Xnc');
+                }
+            },
+            {
+                label: "Hocotate Hacker",
+                click(){
+                    openUrl('https://discord.gg/G7Pgkdh');
                 }
             }
         ]
@@ -205,7 +184,7 @@ if (process.platform == 'darwin') {
 
 // Add dev tools if not in production
 if (process.env.NODE_ENV !== 'production') {
-    mainMenuTemplate.splice(process.platform == 'darwin' ? -1 : -2, 0, {
+    mainMenuTemplate.splice(-1, 0, {
         label: 'Developer Tools',
         submenu: [
             {
