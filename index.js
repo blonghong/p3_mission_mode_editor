@@ -15,7 +15,12 @@ let mainWindow;
 // Listen for app to be ready
 app.on('ready', function(){
     // Create new window
-    mainWindow = new BrowserWindow({});
+    mainWindow = new BrowserWindow({
+        title: 'Pikmin 3 Mission Mode Editor',
+        webPreferences: {
+            nodeIntegration: true
+        }
+    });
     // Load html into window
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'mainWindow.html'),
@@ -127,14 +132,14 @@ const mainMenuTemplate = [
         submenu: [
             {
                 label: 'Load Pikmin 3',
-                accelerator: process.platform == 'darwin' ? 'Command+O' : 'Ctrl+O',
+                accelerator: 'CmdOrCtrl+Q',
                 click(){
                     createWindow();
                 }
             },
             {
                 label: 'Quit',
-                accelerator: process.platform == 'darwin' ? 'Command+Q' : 'Ctrl+Q',
+                accelerator: 'CmdOrCtrl+Q',
                 click(){
                     app.quit();
                 }
@@ -142,3 +147,25 @@ const mainMenuTemplate = [
         ]
     }
 ];
+
+// If mac, add empty object
+if (process.platform == 'darwin') mainMenuTemplate.unshift({});
+
+// Add dev tools if not in production
+if (process.env.NODE_ENV !== 'production') {
+    mainMenuTemplate.push({
+        label: 'Developer Tools',
+        submenu: [
+            {
+                label: 'Toggle DevTools',
+                accelerator: getAccelerator("I"),
+                click(item, focusedWindow){
+                    focusedWindow.toggleDevTools();
+                }
+            },
+            {
+                role: 'reload'
+            }
+        ]
+    })
+}
