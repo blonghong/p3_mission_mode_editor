@@ -18,7 +18,8 @@
     "clipboardy": "^2.3.0",
     "custom-electron-titlebar": "^3.2.4",
     "electron": "^10.1.1",
-    "materialize-css": "^1.0.0-rc.2"
+    "materialize-css": "^1.0.0-rc.2",
+    "python-shell": "^2.0.2"
   },
   "devDependencies": {
     "electron-installer-dmg": "^3.0.0",

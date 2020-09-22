@@ -12,6 +12,7 @@ const fs = require('fs');
 const spawn = require('child_process').spawn;
 const exec = require('child_process').exec
 const clipboardy = require('clipboardy');
+const { PythonShell } = require('python-shell');
 const { parse } = require('path');
 
 require('@treverix/remote/main').initialize();
@@ -171,8 +172,9 @@ const defaultErrorOptions = {
     buttons: ['Cancel', 'Retry']
 }
 function msgBox(lines, options = defaultErrorOptions) {
-    options.detail += `\n\n${lines.join('\n')}`;
-    return dialog.showMessageBoxSync(options);
+    const optionsClone = { ...options };
+    optionsClone.detail += `\n\n${lines.join('\n')}`;
+    return dialog.showMessageBoxSync(optionsClone);
 }
 function clean_line(line) {
     number_sign_pos = line.indexOf("#");
@@ -191,21 +193,30 @@ function strip(str, remove) {
 }
 let currentSzsBatch = 0;
 function unpackSzs(fn, callback, callbackArgs = null, errorCallback = msgBox) {
-    const unpack = spawn('python', [path.join(__dirname, 'sarc.py'), contentDir + fn]);
-    unpack.stdout.on('data', (data) => {
-        if (data.toString().includes("exit-code=0")) {
+    const options = {
+        mode: 'text',
+        pythonOptions: ['-u'],
+        args: [contentDir + fn]
+    };
+
+    PythonShell.run(path.join(__dirname, 'sarc.py'), options, function(err, results) {
+        if (err) {
+            msgBox([], {
+                type: 'error',
+                title: 'Python Error',
+                detail: 'An error occured when trying to unpack archives!\nHave you got Python installed?',
+                buttons: ['Quit']
+            });
+        } else if (results.includes('exit-code=0')) {
             if (callbackArgs !== null) callback(callbackArgs);
             else callback();
-        } else errorCallback([fn]);
-    })
+        } else return errorCallback([fn]);
+    });
 }
 function unpackedSzs(callback = null) {
     currentSzsBatch -= 1;
-
     if (currentSzsBatch <= 0) {
         currentSzsBatch = 0;
-
-        console.log('finished batch!');
         if (callback && typeof callback == 'function') callback();
     }
 }
@@ -229,11 +240,9 @@ function loadRoot() {
     });
 
     if (response) {
-        let errors = [];
-        console.log(errors);
+        const errors = [];
         let addContent = false;
         for (let i = 0; i < requiredFiles.length; i++) {
-            console.log(`checking: '${response + requiredFiles[i]}'`);
             if (!fs.existsSync(response + requiredFiles[i])) {
                 addContent = true;
                 if (!fs.existsSync(response + "/content" + requiredFiles[i])) {
@@ -246,7 +255,7 @@ function loadRoot() {
             if (msgBox(errors) == 1) return loadRoot();
         } else {
             contentDir = response + (addContent ? "/content/" : "/");
-            unpackSzs("CMCmn/system/mis_order.szs", loadMissions);
+            if (unpackSzs("CMCmn/system/mis_order.szs", loadMissions) == 1) loadRoot();
         }
     }
 }
@@ -295,11 +304,8 @@ function loadMissions() {
             missions[index].items.push(line);
         }
     }
-
-    console.log(missions);
     unpackMissionSettings();
 }
-
 
 function unpackMissionSettings() {
     for (let i = 0; i < missions.length; i++) currentSzsBatch += missions[i].items.length * 2; // *2 for piknum as well
