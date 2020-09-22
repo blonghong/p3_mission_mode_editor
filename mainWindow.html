@@ -20,7 +20,22 @@
             </ul>
         </div>
 
-        <div id="4" class="col s12" style='background-color: red;'>Test 1</div>
+        <div id="4" class="col s12">
+            <ul id='ct' class="collapsible">
+                <li>
+                    <div class="collapsible-header"><i class="material-icons">filter_drama</i>First</div>
+                    <div class="collapsible-body"><span>Lorem ipsum dolor sit amet.</span></div>
+                </li>
+                <li>
+                    <div class="collapsible-header"><i class="material-icons">place</i>Second</div>
+                    <div class="collapsible-body"><span>Lorem ipsum dolor sit amet.</span></div>
+                </li>
+                <li>
+                    <div class="collapsible-header"><i class="material-icons">whatshot</i>Third</div>
+                    <div class="collapsible-body"><span>Lorem ipsum dolor sit amet.</span></div>
+                </li>
+            </ul>
+        </div>
         <div id="3" class="col s12" style='background-color: blue;'>Test 2</div>
         <div id="6" class="col s12" style='background-color: green;'>Test 3</div>
     </div>
@@ -37,6 +52,10 @@
         function test(e) {
             console.log(e.id);
         }
+
+        ipcRenderer.on('mission:loading', function(){
+            row.style.visibility = 'false';
+        });
 
         ipcRenderer.on('mission:update', function(e, missions){
             //const mission_types = Object.keys(missions);
@@ -60,12 +79,16 @@
                 elem.appendChild(li);
             }
             document.getElementById('tabs').style.display = 'block';
+            var col = document.querySelector('.collapsible');
+
             
             var options = {
                 onShow: test,
                 swipeable: true
             };
             var instance = M.Tabs.init(elem, options);
+            M.Collapsible.init()
+            row.style.visibility = 'true';
             //instance.select('4');
             //instance.updateTabIndicator();
         });

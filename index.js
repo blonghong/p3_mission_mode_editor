@@ -17,11 +17,7 @@ const { parse } = require('path');
 
 require('@treverix/remote/main').initialize();
 
-const msgRegions = ['EUDut', 'EUEng', 'EUFre', 'EUGer', 'EUIta', 'EUPor', 'EURus', 'EUSpa', 'JPJpn', 'USEng', 'USFre',
-    'USPor', 'USSpa'];
-
 let mainWindow;
-
 function openUrl(url) {
     const start = process.platform == 'darwin' ? 'open' : process.platform == 'win32' ? 'start' : 'xdg-open';
     exec(`${start} ${url}`);
@@ -232,7 +228,7 @@ const requiredFiles = [
 ];
 
 // Handle load directory
-function loadRoot() {
+async function loadRoot() {
     const response = dialog.showOpenDialogSync({
         title: 'Select your Pikmin 3 root directory',
         buttonLabel: 'Select Folder',
@@ -255,12 +251,13 @@ function loadRoot() {
             if (msgBox(errors) == 1) return loadRoot();
         } else {
             contentDir = response + (addContent ? "/content/" : "/");
+            mainWindow.webContents.send('mission:loading');
             if (unpackSzs("CMCmn/system/mis_order.szs", loadMissions) == 1) loadRoot();
         }
     }
 }
 
-function loadMissions() {
+async function loadMissions() {
     const misOrder = fs.readFileSync(contentDir + "CMCmn/system/mis_order.szs_ext/mis_order.txt").toString()
         .replace(/\#.*$/gm, '').split('\n');
 
@@ -307,7 +304,7 @@ function loadMissions() {
     unpackMissionSettings();
 }
 
-function unpackMissionSettings() {
+async function unpackMissionSettings() {
     for (let i = 0; i < missions.length; i++) currentSzsBatch += missions[i].items.length * 2; // *2 for piknum as well
 
     const warnings = [];
@@ -367,7 +364,7 @@ function unpackMissionSettings() {
     }
 }
 
-function loadMissionSettings() {
+async function loadMissionSettings() {
     for (let i = 0; i < missions.length; i++) {
         missions[i].settings = [];
         for (let a = 0; a < missions[i].items.length; a++) {
