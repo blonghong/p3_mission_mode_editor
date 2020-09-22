@@ -1,31 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Pikmin 3 Mission Mode Editor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 <body>
-    <h1>Pikmin 3 Mission mode Editor</h1>
+    <nav>
+        <div class="nav-wrapper">
+            <a class="brand-logo center">Pikmin 3 Mission Mode Editor</a>
+        </div>
+    </nav>
+
+    <div class="row" id="tabs" style='display: none; margin: 20px; align-content: center;'>
+        
+        <div class="col s12">
+            <ul class="tabs">
+                
+            </ul>
+        </div>
+
+        <div id="4" class="col s12" style='background-color: red;'>Test 1</div>
+        <div id="3" class="col s12" style='background-color: blue;'>Test 2</div>
+        <div id="6" class="col s12" style='background-color: green;'>Test 3</div>
+    </div>
+
     <script>
-        const path = require('path');
-        const url = require('url');
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
 
-        const customTitlebar = require('custom-electron-titlebar');
+        var row = document.querySelector('.row');
+        var elem = document.querySelector('.tabs');
 
-        window.addEventListener('DOMContentLoaded', () => {
-            new customTitlebar.Titlebar({
-                backgroundColor: customTitlebar.Color.fromHex('#2f3241'),
-                icon: url.format(path.join(__dirname, '/images', '/icon.png')),
-            });
+        
 
-            const replaceText = (selector, text) => {
-                const element = document.getElementById(selector)
-                if (element) element.innerText = text
+        function test(e) {
+            console.log(e.id);
+        }
+
+        ipcRenderer.on('mission:update', function(e, missions){
+            //const mission_types = Object.keys(missions);
+            elem.innerHTML = '';
+            for (let i = 0; i < missions.length; i++) {
+                let mission_mode = `Unknown Mode: "${missions[i].type}"`;
+                switch (missions[i].type) {
+                    case "4": { mission_mode = "Collect Treasure!"; } break;
+                    case "3": { mission_mode = "Battle Enemies!"; } break;
+                    case "6": { mission_mode = "Defeat Bosses!"; } break;
+                }
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                const itemText = document.createTextNode(mission_mode);
+                a.appendChild(itemText);
+                a.href = `#${missions[i].type}`;
+                a.className = 'active waves-effect';
+                a.style.borderRadius = '5px 5px 0px 0px';
+                li.appendChild(a);
+                li.className = 'tab col s3';
+                elem.appendChild(li);
             }
-
-            for (const type of ['chrome', 'node', 'electron']) {
-                replaceText(`${type}-version`, process.versions[type])
-            }
-        })
+            document.getElementById('tabs').style.display = 'block';
+            
+            var options = {
+                onShow: test,
+                swipeable: true
+            };
+            var instance = M.Tabs.init(elem, options);
+            //instance.select('4');
+            //instance.updateTabIndicator();
+        });
     </script>
 </body>
 </html>
